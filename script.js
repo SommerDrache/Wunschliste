@@ -1,88 +1,90 @@
+// 🔥 Firebase-Funktionen aus window-Objekt holen
+const database = window.firebaseDatabase;
+const ref = window.firebaseRef;
+const push = window.firebasePush;
+const onValue = window.firebaseOnValue;
+const update = window.firebaseUpdate;
+const remove = window.firebaseRemove;
+
+// 🔥 Test: Wird Firebase geladen?
+console.log("🔥 Firebase geladen:", database);
+console.log("📌 Firebase Ref geladen:", ref);
+console.log("📌 Firebase Push geladen:", push);
+
+if (!database) {
+    console.error("❌ Firebase wurde NICHT richtig geladen! Prüfe deine Firebase-Konfiguration in index.html!");
+}
+
 // Liste der 9 Personen
 const personen = [
-    "LUCAS", "ANNA", "LEO", "OMA", "OPA",
-    "ALEX", "REINI", "BERND", "ANGIE"
+    "Anna", "Ben", "Clara", "David", "Emma",
+    "Felix", "Gina", "Hannes", "Isabella"
 ];
 
 const container = document.getElementById("listenContainer");
 
-// Daten aus dem Local Storage laden
-const gespeicherteWünsche = JSON.parse(localStorage.getItem("wunschlisten")) || {};
+// Wunschlisten erstellen
+function erstelleWunschlisten() {
+    container.innerHTML = ""; 
+    personen.forEach(person => {
+        const personDiv = document.createElement("div");
+        personDiv.classList.add("person");
+        personDiv.innerHTML = `
+            <h2>${person}</h2>
+            <ul id="liste-${person}"></ul>
+            <input type="text" id="input-${person}" placeholder="Neuen Wunsch eingeben">
+            <button onclick="wunschHinzufügen('${person}')">Hinzufügen</button>
+        `;
+        container.appendChild(personDiv);
+        ladeWünsche(person);
+    });
+}
 
-// Erstelle Wunschlisten für jede Person
-personen.forEach(person => {
-    const personDiv = document.createElement("div");
-    personDiv.classList.add("person");
-    personDiv.innerHTML = `
-        <h2>${person}</h2>
-        <ul id="liste-${person}"></ul>
-        <input type="text" id="input-${person}" placeholder="Neuen Wunsch eingeben">
-        <button onclick="wunschHinzufügen('${person}')">Hinzufügen</button>
-    `;
-    container.appendChild(personDiv);
-
-    // Falls es gespeicherte Wünsche gibt, lade sie
-    if (gespeicherteWünsche[person]) {
-        gespeicherteWünsche[person].forEach(wunsch => {
-            wunschHinzufügen(person, wunsch.text, wunsch.erledigt, false);
-        });
-    }
-});
-
-function wunschHinzufügen(person, text = null, erledigt = false, speichern = true) {
+// 🔥 Funktion „wunschHinzufügen“ global machen
+window.wunschHinzufügen = function(person) {
     const input = document.getElementById(`input-${person}`);
-    const wunschText = text || input.value.trim();
+    const wunschText = input.value.trim();
 
     if (wunschText !== "") {
-        const liste = document.getElementById(`liste-${person}`);
-        const listItem = document.createElement("li");
-
-        listItem.innerHTML = `
-            <span>${wunschText}</span>
-            <div class="checkbox-btn-group">
-                <input type="checkbox" onclick="toggleErledigt(this)" ${erledigt ? "checked" : ""}>
-                <button class="delete-btn" onclick="wunschLöschen(this, '${person}')">❌</button>
-            </div>
-        `;
-
-        if (erledigt) {
-            listItem.classList.add("completed");
-        }
-
-        liste.appendChild(listItem);
+        push(ref(database, `wünsche/${person}`), { text: wunschText, erledigt: false });
         input.value = "";
-
-        if (speichern) speicherWünsche();
     }
-}
+};
 
-function toggleErledigt(checkbox) {
-    const listItem = checkbox.parentElement.parentElement;
-    listItem.classList.toggle("completed", checkbox.checked);
-    speicherWünsche();
-}
+// 🔥 Funktion „ladeWünsche“ global machen
+window.ladeWünsche = function(person) {
+    const liste = document.getElementById(`liste-${person}`);
 
-function wunschLöschen(button, person) {
-    const listItem = button.parentElement.parentElement;
-    listItem.remove();
-    speicherWünsche();
-}
+    onValue(ref(database, `wünsche/${person}`), snapshot => {
+        liste.innerHTML = "";
+        snapshot.forEach(childSnapshot => {
+            const wunsch = childSnapshot.val();
+            const listItem = document.createElement("li");
 
-function speicherWünsche() {
-    const neueDaten = {};
-
-    personen.forEach(person => {
-        const liste = document.getElementById(`liste-${person}`);
-        const wünsche = [];
-
-        liste.querySelectorAll("li").forEach(item => {
-            const text = item.querySelector("span").textContent.trim();
-            const erledigt = item.querySelector("input").checked;
-            wünsche.push({ text, erledigt });
+            listItem.innerHTML = `
+                <span>${wunsch.text}</span>
+                <div class="checkbox-btn-group">
+                    <input type="checkbox" onclick="toggleErledigt('${person}', '${childSnapshot.key}', this)" ${wunsch.erledigt ? "checked" : ""}>
+                    <button class="delete-btn" onclick="wunschLöschen('${person}', '${childSnapshot.key}')">❌</button>
+                </div>
+            `;
+            if (wunsch.erledigt) listItem.classList.add("completed");
+            liste.appendChild(listItem);
         });
-
-        neueDaten[person] = wünsche;
     });
+};
 
-    localStorage.setItem("wunschlisten", JSON.stringify(neueDaten));
-}
+// 🔥 Funktion „toggleErledigt“ global machen
+window.toggleErledigt = function(person, key, checkbox) {
+    update(ref(database, `wünsche/${person}/${key}`), { erledigt: checkbox.checked });
+};
+
+// 🔥 Funktion „wunschLöschen“ global machen
+window.wunschLöschen = function(person, key) {
+    remove(ref(database, `wünsche/${person}/${key}`));
+};
+
+// 🔥 **Wunschlisten nach dem Laden der Seite erstellen**
+window.onload = function() {
+    erstelleWunschlisten();
+};

@@ -11,7 +11,38 @@
 
     <div id="listenContainer"></div> <!-- Hier werden die Listen eingefügt -->
 
-    <script src="script.js"></script>
+    <!-- Firebase SDK einbinden -->
+    <script type="module">
+      // Firebase SDKs importieren
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+      import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
+
+      // 🔥 KORREKTE Firebase-Konfiguration
+      const firebaseConfig = {
+        apiKey: "AIzaSyAaZatyYzVjH07EdSZN6m3fPRJt3OVOLTE",
+        authDomain: "wunschliste-f34c1.firebaseapp.com",
+        databaseURL: "https://wunschliste-f34c1-default-rtdb.europe-west1.firebasedatabase.app",  // ✅ WICHTIG! 
+        projectId: "wunschliste-f34c1",
+        storageBucket: "wunschliste-f34c1.appspot.com",
+        messagingSenderId: "564526847835",
+        appId: "1:564526847835:web:fd53f19580b2b68efa2c7e",
+        measurementId: "G-3CHD62Z9MH"
+      };
+
+      // Firebase initialisieren
+      const app = initializeApp(firebaseConfig);
+      const database = getDatabase(app);
+
+      // Firebase für script.js verfügbar machen
+      window.firebaseDatabase = database;
+      window.firebaseRef = ref;
+      window.firebasePush = push;
+      window.firebaseOnValue = onValue;
+      window.firebaseUpdate = update;
+      window.firebaseRemove = remove;
+    </script>
+
+    <!-- Dein eigenes JavaScript -->
+    <script src="script.js" type="module"></script>
 </body>
 </html>
-
