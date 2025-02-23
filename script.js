@@ -17,8 +17,8 @@ if (!database) {
 
 // Liste der 9 Personen
 const personen = [
-    "Anna", "Ben", "Clara", "David", "Emma",
-    "Felix", "Gina", "Hannes", "Isabella"
+    "Lucas", "Anna", "Leo", "Waltraud", "Wolfgang",
+    "Alex", "Reini", "Bernd", "Angie"
 ];
 
 const container = document.getElementById("listenContainer");
